@@ -1,19 +1,17 @@
-
-
+#Maze Runner Project
+# @Author -> Dominic Domingo
 
 import turtle
 import functools
 import random
 import time
 
-
-
 #turtle objects
 obstacle_turtle = turtle.Turtle()
 character_turtle = turtle.Turtle()
 treasure_turtle= turtle.Turtle()
-monster_turtle = turtle.Turtle()
-
+text_turtle = turtle.Turtle()
+text_turtle.hideturtle()
 
 window = turtle.Screen()
 window.title("Maze Runner by Dominic_Domingo")
@@ -48,7 +46,7 @@ KEY_LEFT = "a"
 KEY_UP = "w"
 KEY_RIGHT = "d"
 KEY_DOWN = "s"
-MONSTER_SPEED_IN_SEC = 1  # in seconds
+MONSTER_SPEED_IN_SEC = 0.5  # in seconds
 row_pos = 0
 col_pos = 0
 
@@ -59,44 +57,15 @@ game_win_list = []
 
 # Classes
 # --------------------------------------------------------
-# A Cell object stores a Turtle object and its coordinates
-class Cell:
-    def __init__(self, x, y, turtle_obj):
+# Monster class to store coordinates, direction, and turtle object
+class Monster:
+    def __init__(self, x, y, turtle_obj,direction):
         self.x = x
         self.y = y
         self.turtle_obj = turtle_obj
-
-
-# A Player is a Cell. It also has a 'state' property,
-# where the state keeps track of whether the Player is either
-# ALIVE, DEAD, or WIN (the last of which is the brief state
-# where the Player has found the treasure and the game is about
-# to be over)
-class Player(Cell):
-    def __init__(self, x, y, turtle_player, state):
-        super().__init__(x, y, turtle_player)
-        self.state = state
-
-
-# A Monster is a Cell. It also has the 'direction' property,
-# which keeps track of the direction that the monster is
-# currently going, either LEFT, UP, DOWN, or RIGHT
-class Monster(Cell):
-    def __init__(self, x, y, turtle_player, direction=UP):
-        super().__init__(x, y, turtle_player)
         self.direction = direction
-      
-# treasure class
-class Treasure(Cell):
-    def __init__(self, x, y, turtle_player, direction=UP):
-        super().__init__(x, y, turtle_player)
-        self.direction = direction
-# obstacle class
-      
-class Obstacle(Cell):
-    def __init__(self, x, y, turtle_player, direction=UP):
-        super().__init__(x, y, turtle_player)
-        self.direction = direction
+
+        
 # Functions
 # --------------------------------------------------
 # Creates an empty n x n grid of the given data type
@@ -151,21 +120,23 @@ def create_obstacle(x,y):
   obstacle_turtle.pendown()
   obstacle_turtle.begin_fill()
   for i in range(4):
-    obstacle_turtle.forward(10)
+    obstacle_turtle.forward(cell_width)
+    obstacle_turtle.right(90)
+    obstacle_turtle.forward(cell_height)
     obstacle_turtle.right(90)
   obstacle_turtle.end_fill()
 
-def create_monster(x,y):
+def create_monster(x,y,monster):
   
-  monster_turtle.hideturtle()
-  monster_turtle.penup()
-  monster_turtle.goto(x,y)
-  monster_turtle.color("red")
-  monster_turtle.fillcolor("red")
-  monster_turtle.pendown()
-  monster_turtle.begin_fill()
-  monster_turtle.circle(8)
-  monster_turtle.end_fill()
+  monster.turtle_obj.hideturtle()
+  monster.turtle_obj.penup()
+  monster.turtle_obj.goto(x,y)
+  monster.turtle_obj.color("red")
+  monster.turtle_obj.fillcolor("red")
+  monster.turtle_obj.pendown()
+  monster.turtle_obj.begin_fill()
+  monster.turtle_obj.circle(cell_height/2)
+  monster.turtle_obj.end_fill()
 
 def create_treasure(x,y):
   treasure_turtle.hideturtle()
@@ -176,7 +147,7 @@ def create_treasure(x,y):
   treasure_turtle.fillcolor("yellow")
   treasure_turtle.begin_fill()
   for i in range (3):
-    treasure_turtle.forward(20)
+    treasure_turtle.forward(cell_width)
     treasure_turtle.left(120)
   treasure_turtle.end_fill()
 
@@ -190,7 +161,7 @@ def create_player(x,y):
   character_turtle.color("blue")
   character_turtle.fillcolor("blue")
   character_turtle.begin_fill()
-  character_turtle.circle(10)
+  character_turtle.circle(cell_height/2)
   character_turtle.end_fill()
   return x_pos, y_pos
 
@@ -200,133 +171,223 @@ def create_player(x,y):
 x = -110
 y= 110
 
-"""
-for row in grid:
-  row = grid[i]
-  for col in row:
-    if col == BLOCK_STR:
-      create_obstacle(x,y)
-      obstacle = Obstacle(x, y,obstacle_turtle)
-    elif col == MONSTER_STR:
-      create_monster(x+5,y-10)
-      monster = Monster(x,y,monster_turtle)
-    elif col == TREASURE_STR:
-      create_treasure(x-5,y-10)
-      treasure = Treasure(x,y,treasure_turtle)
-    elif col == PLAYER_STR:
-      create_player(x+5,y-15)
-      player = Player(x,y,character_turtle, ALIVE)
-    x+=20
-  y-=20
-  x=-110
-  i+=1
-"""
+x = cell_width*(len(grid[0])/2)
+y= cell_height*(len(grid)/2)
 
 
-
-#creating player object
-
-
-obstacle_object = Cell(x,y,obstacle_turtle)
-
-x_boundary_negative = float(-110)
-x_boundary_positive = float(130)
-y_boundary_negative = float(-110)
-y_boundary_positive = float(110)
+x_boundary_negative = float(0-x)
+x_boundary_positive = float(0+x)
+y_boundary_negative = float(0-y)
+y_boundary_positive = float(0+y)
 boundaries = [x_boundary_negative,x_boundary_positive,y_boundary_negative,y_boundary_positive]
 
 #controls
 def move_up():
   global player_pos
   character_turtle.penup()
-  player_up_position = [player_pos[0],player_pos[1]+20]
-  if ((player_up_position[1])) < boundaries[3]:
-    character_turtle.clear()
-    create_player(player_pos[0],player_pos[1]+20)
+  player_up_position = [player_pos[0],player_pos[1]+cell_height]
+  player_up_position = round(player_up_position[0]),round(player_up_position[1])
+  if ((player_up_position[1])) <= boundaries[3]:
+    if (player_up_position) not in obstacle_position_list:
+      character_turtle.clear()
+      create_player(player_pos[0],player_pos[1]+cell_height)
   player_pos = character_turtle.pos()
-  print (player_up_position[1])
+
   
 def move_down():
   global player_pos
   character_turtle.penup()
-  player_down_position = [player_pos[0],player_pos[1]-20]
-  if ((player_down_position[1])) > boundaries[2]:
-    character_turtle.clear()
-    create_player(player_pos[0],player_pos[1]-20)
+  player_down_position = [player_pos[0],player_pos[1]-cell_height]
+  player_down_position = round(player_down_position[0]),round(player_down_position[1])
+  if ((player_down_position[1])) >= boundaries[2]:
+    if (player_down_position) not in obstacle_position_list:
+      character_turtle.clear()
+      create_player(player_pos[0],player_pos[1]-cell_height)
   player_pos = character_turtle.pos()
   
 
 def move_left():
   global player_pos
   character_turtle.penup()
-  player_left_position = [player_pos[0]-20,player_pos[1]]
-  if ((player_left_position[0])) > boundaries[0]:
-    character_turtle.clear()
-    create_player(player_pos[0]-20,player_pos[1])
+  player_left_position = [player_pos[0]-cell_width,player_pos[1]]
+  player_left_position = round(player_left_position[0]),round(player_left_position[1])
+  if ((player_left_position[0])) >= boundaries[0]:
+    if (player_left_position) not in obstacle_position_list:
+      character_turtle.clear()
+      create_player(player_pos[0]-cell_width,player_pos[1])
   player_pos = character_turtle.pos()
 
 def move_right():
   global player_pos
   character_turtle.penup()
-  player_right_position = [player_pos[0]+20,player_pos[1]]
-  if ((player_right_position[0]+20)) < boundaries[1]:
-    character_turtle.clear()
-    create_player(player_pos[0]+20,player_pos[1])
+  player_right_position = [player_pos[0]+cell_width,player_pos[1]]
+  player_right_position = round(player_right_position[0]),round(player_right_position[1])
+  if ((player_right_position[0]+cell_width)) <= boundaries[1]+cell_width:
+    if (player_right_position) not in obstacle_position_list:
+      character_turtle.clear()
+      create_player(player_pos[0]+cell_width,player_pos[1])
   player_pos = character_turtle.pos()
 
-def move_monsters():
-  pass
+def win_text():
+  text_turtle.goto(0, 0)
+  text_turtle.color("white")
+  random_win_text_list = ["You won!", "GG, you won!", "Too easy :)", "Well played!", "Congrats, you reached the treasure!", "Good Game!"]
+  victory_text = random.choice(random_win_text_list)
+  text_turtle.write(victory_text, align="center", font = ("Roboto",25, "bold"))
 
-  
-  
-#game loop
+def loss_text():
+  text_turtle.goto(0, 0)
+  text_turtle.color("white")
+  random_loss_text_list = ["You lost!", "Unlucky, GG go next", "Try timing your movements!", "You know you're supposed to avoid the monsters, right?", "Try again!"]
+  loss_text = random.choice(random_loss_text_list)
+  text_turtle.write(loss_text, align="center", font = ("Roboto",25, "bold"))
 
 
-x = -110
-y= 110
+def move_monsters(monster):
+ 
+  def monster_up():
+    monster.turtle_obj.clear()
+    create_monster(monster.x, monster.y+cell_height, monster)
+    monster.x = (monster.turtle_obj.pos()[0])
+    monster.y = (monster.turtle_obj.pos()[1])
+
+  def monster_down():
+    monster.turtle_obj.clear()
+    create_monster(monster.x, monster.y-cell_height, monster)
+    monster.x = (monster.turtle_obj.pos()[0])
+    monster.y = (monster.turtle_obj.pos()[1])
+
+  def monster_left():
+    monster.turtle_obj.clear()
+    create_monster(monster.x-cell_width, monster.y, monster)
+    monster.x = (monster.turtle_obj.pos()[0])
+    monster.y = (monster.turtle_obj.pos()[1])
+
+  def monster_right():
+    monster.turtle_obj.clear()
+    create_monster(monster.x+cell_width, monster.y, monster)
+    monster.x = (monster.turtle_obj.pos()[0])
+    monster.y = (monster.turtle_obj.pos()[1])
+
+#Monster movement logic, checking if it is within boundaries or next to an obstacle
+  random_direction = []
+  monster_pos = monster.turtle_obj.pos()
+  monster.x = monster_pos[0]
+  monster.y = monster_pos[1]
+  monster_up_position = (monster.x, monster.y+cell_height)
+  monster_up_position = round(monster_up_position[0]),round(monster_up_position[1])
+  monster_right_position = (monster.x+cell_width, monster.y)
+  monster_right_position = round(monster_right_position[0]), round(monster_right_position[1])
+  monster_left_position = (monster.x-cell_width, monster.y)
+  monster_left_position = round(monster_left_position[0]), round(monster_left_position[1])
+  monster_down_position = (monster.x, monster.y-cell_height)
+  monster_down_position = round(monster_down_position[0]),round(monster_down_position[1])
+  if monster_left_position[0] >= x_boundary_negative:
+    if monster_left_position not in obstacle_position_list:
+      random_direction.append(0)
+  if monster_up_position[1] <= y_boundary_positive-cell_height:
+    if monster_up_position not in obstacle_position_list:
+      random_direction.append(1)
+  if monster_right_position[0] <= x_boundary_positive:
+    if monster_right_position not in obstacle_position_list:
+      random_direction.append(2)
+  if monster_down_position[1] >= y_boundary_negative:
+    if monster_down_position not in obstacle_position_list:
+      random_direction.append(3)
+#choosing random direction for monster to move
+  Monster.direction = random.choice(random_direction)
+  if Monster.direction == 0:
+    monster_left()
+  elif Monster.direction == 1:
+    monster_up()
+  elif Monster.direction == 2:
+    monster_right()
+  elif Monster.direction == 3:
+    monster_down()
+    
+
+
+#Setting starting position of grid to fit dimensions of screen
+
+x1 = 0
+y1 = 0
+x = -cell_width*(len(grid[0])/2)
+original_x = x
+y= cell_height*(len(grid)/2)
+
+#Use lists to track positions of each object
+list_of_monsters = []
 player_position = []
 obstacle_position_list = []
-monster_count = 0
+monster_position_list = []
+
+#Setting up map by using grid from create_maze function
+#Iterate through each element of the grid, checking if there is a string indicating the position of an object
+#Create object upon finding string
+
 for row in grid:
   for col in row:
     if col == BLOCK_STR:
       create_obstacle(x,y)
-      obstacle = Obstacle(x, y,obstacle_turtle)
-      obstacle_pos = obstacle_turtle.pos()
+      obstacle_pos = (x,y)
+      obstacle_pos = obstacle_pos[0]+cell_width/2,obstacle_pos[1]-cell_height
+      obstacle_pos = round(obstacle_pos[0]),round(obstacle_pos[1])
       obstacle_position_list.append((obstacle_pos))
     elif col == MONSTER_STR:
-      create_monster(x+5,y-10)
-      monster = Monster(x,y,monster_turtle)
-      monster_count+=1
+      monster_turtle = turtle.Turtle()
+      monster = Monster(round(x+cell_width/2),round(y-cell_height),monster_turtle,direction=UP)
+      create_monster(x+cell_width/2,y-cell_height,monster)
+      list_of_monsters.append(monster)
     elif col == TREASURE_STR:
-      create_treasure(x-5,y-10)
-      treasure = Treasure(x,y,treasure_turtle)
+      create_treasure(x,y-cell_height)
+      treasure_pos = (x+cell_width/2, y-cell_height)
+      treasure_pos = round(treasure_pos[0]), round(treasure_pos[1])
     elif col == PLAYER_STR:
-      create_player(x+5,y-15)
-      player = Player(x,y,character_turtle, ALIVE)
+      create_player(x+cell_width/2,y-cell_height)
       player_pos = character_turtle.pos()
-    x+=20
-  y-=20
-  x=-110
+    x += cell_width
+    x1 += 1
+  y-= cell_height
+  y1-=1
+  x= original_x
 
-f = 0
-print (obstacle_position_list)
-while PLAYER_STATE == 0:
+
+#Game Loop
+# While player is alive,listen for keypresses and perform movement functions on keypress
+alive = True
+start_time = time.time()
+window.listen()
+while alive is True:
   window.update()
-  window.listen()
   window.onkeypress(move_up, "w")
   window.onkeypress(move_down, "s")
   window.onkeypress(move_left, "a")
   window.onkeypress(move_right, "d")
-
-
-start_time = time.time()
-while True:
-    window.update()
-
-    # Move the monsters
-    if time.time() - start_time > MONSTER_SPEED_IN_SEC:
-        move_monsters()
-        start_time = time.time()
-
+  character_pos = character_turtle.pos() 
+  character_pos = round(character_pos[0]),round(character_pos[1])
+  if character_pos in monster_position_list:
+        window.clear()
+        window.bgcolor("black")
+        loss_text()
+        break
+  if character_pos == treasure_pos:
+        window.clear()
+        window.bgcolor("black")
+        win_text()
+        break
+  
+  i = 0
+  if time.time() - start_time > MONSTER_SPEED_IN_SEC:
+    monster_position_list = []
+    for ele in list_of_monsters:
+      move_monsters(list_of_monsters[i])
+      monsters_pos = list_of_monsters[i].turtle_obj.pos() 
+      monsters_pos = monsters_pos [0], monsters_pos[1]
+      monsters_pos = round(monsters_pos[0]),round(monsters_pos[1])
+      monster_position_list.append(monsters_pos)
+      i+=1
+      start_time = time.time()
+while PLAYER_STATE is DEAD:
+  print("dead")
+            
 turtle.done()
