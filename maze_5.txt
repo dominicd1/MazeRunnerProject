@@ -1,0 +1,6 @@
+X X X X X X
+X C . . X T
+X . X . . .
+. . M . X .
+X X X . X .
+X . . M X X
